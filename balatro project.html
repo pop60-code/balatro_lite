@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Balatro Lite</title>
+  <style>
+    :root {
+      --bg: #120d1b;
+      --bg-2: #1b1228;
+      --panel: #1b1327;
+      --panel-2: #261d37;
+      --gold: #f8d97a;
+      --gold-2: #d89f43;
+      --red: #ff5a6e;
+      --green: #73f5b9;
+      --blue: #7ec7ff;
+      --purple: #b893ff;
+      --text: #f9f4ff;
+      --muted: #c6bde0;
+      --shadow: rgba(0, 0, 0, 0.5);
+      --card-front: #f8f6ff;
+      --card-back: #2e1f46;
+      --card-red: #d94d64;
+      --card-black: #17161d;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #39254a 0%, #1a1225 28%, #09070d 100%);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+    }
+
+    .game {
+      width: min(1100px, 92vw);
+      background: rgba(17, 22, 35, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 22px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255,255,255,0.04);
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 24px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01));
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .title {
+      font-size: clamp(1.5rem, 2vw, 2.2rem);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 900;
+      color: var(--gold);
+      text-shadow: 0 0 18px rgba(248, 217, 122, 0.35);
+    }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .stat {
+      min-width: 110px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin-top: 3px;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 1.4fr 0.9fr;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .panel {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .hand-area {
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .hand-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title {
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .hand {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(80px, 1fr));
+      gap: 14px;
+      margin-top: 6px;
+      min-height: 220px;
+    }
+
+    .card {
+      position: relative;
+      border: none;
+      border-radius: 16px;
+      min-height: 180px;
+      background: linear-gradient(180deg, #fff, #ebedf5);
+      color: var(--card-black);
+      box-shadow: 0 14px 30px rgba(0,0,0,0.25);
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      border: 2px solid transparent;
+      overflow: hidden;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 18px 35px rgba(0,0,0,0.35);
+    }
+
+    .card.red { color: var(--card-red); }
+    .card.selected {
+      border-color: var(--gold);
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 20px 38px rgba(245, 199, 110, 0.35);
+    }
+
+    .card.hold-mark {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(245, 199, 110, 0.18);
+      border: 1px solid rgba(245, 199, 110, 0.8);
+      display: grid;
+      place-items: center;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--gold-2);
+    }
+
+    .card-rank {
+      font-size: 1.6rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .card-suit {
+      font-size: 2.1rem;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .card-bottom {
+      font-size: 1.6rem;
+      font-weight: 800;
+      line-height: 1;
+      text-align: right;
+      transform: rotate(180deg);
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: auto;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.15s ease;
+    }
+
+    button:hover { transform: translateY(-2px); filter: brightness(1.04); }
+
+    .primary {
+      background: linear-gradient(180deg, var(--gold), var(--gold-2));
+      color: #201810;
+    }
+
+    .secondary {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text);
+    }
+
+    .shop {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .joker-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .joker {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .joker-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .joker-name {
+      font-weight: 800;
+      color: var(--gold);
+    }
+
+    .joker-effect {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .joker-buy {
+      padding: 8px 10px;
+      min-width: 64px;
+      border-radius: 10px;
+      background: rgba(110, 231, 162, 0.14);
+      color: var(--green);
+      border: 1px solid rgba(110, 231, 162, 0.35);
+    }
+
+    .status {
+      margin-top: 18px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-height: 120px;
+    }
+
+    .log {
+      margin: 0;
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .log li::marker {
+      color: var(--gold);
+    }
+
+    @media (max-width: 860px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+
+      .hand {
+        grid-template-columns: repeat(2, minmax(120px, 1fr));
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .stats {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game">
+    <div class="topbar">
+      <div class="title">Balatro Royale</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Ante</div>
+          <div class="stat-value" id="anteValue">1</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Cash</div>
+          <div class="stat-value" id="moneyValue">4</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Mult</div>
+          <div class="stat-value" id="multValue">1x</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Score</div>
+          <div class="stat-value" id="scoreValue">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="panel hand-area">
+        <div class="hand-header">
+          <div class="section-title">Your Hand</div>
+          <div class="section-title" id="handHint">Select cards to hold</div>
+        </div>
+
+        <div class="hand" id="hand"></div>
+
+        <div class="actions">
+          <button class="primary" id="playBtn">Play Hand</button>
+          <button class="secondary" id="drawBtn">Discard & Draw</button>
+        </div>
+      </div>
+
+      <div class="shop panel">
+        <div class="section-title">Jokers</div>
+        <div class="joker-list" id="jokerList"></div>
+
+        <div class="status">
+          <div class="section-title">Round Feed</div>
+          <ul class="log" id="log"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const suits = ["♠", "♥", "♦", "♣"];
+    const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+    const rankValues = { A: 14, K: 13, Q: 12, J: 11, "10": 10, "9": 9, "8": 8, "7": 7, "6": 6, "5": 5, "4": 4, "3": 3, "2": 2 };
+    const pokerRankMap = {
+      "High Card": 1,
+      "Pair": 2,
+      "Two Pair": 3,
+      "Three of a Kind": 4,
+      "Straight": 5,
+      "Flush": 6,
+      "Full House": 7,
+      "Four of a Kind": 8,
+      "Straight Flush": 9,
+      "Royal Flush": 10
+    };
+
+    const state = {
+      deck: [],
+      hand: [],
+      selected: new Set(),
+      money: 4,
+      ante: 1,
+      mult: 1,
+      score: 0,
+      log: [],
+      jokers: []
+    };
+
+    const jokerCatalog = [
+      { name: "Glow Up", effect: "+2 Mult", cost: 2, type: "mult", value: 2 },
+      { name: "Lucky Charm", effect: "+3 Chips", cost: 3, type: "chips", value: 3 },
+      { name: "Double Down", effect: "x2 Score", cost: 4, type: "score", value: 2 },
+      { name: "Casino Crush", effect: "+4 Mult", cost: 5, type: "mult", value: 4 }
+    ];
+
+    const $ = (id) => document.getElementById(id);
+
+    function makeDeck() {
+      const deck = [];
+      suits.forEach((suit) => {
+        ranks.forEach((rank) => {
+          deck.push({ rank, suit, value: rankValues[rank] });
+        });
+      });
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      return deck;
+    }
+
+    function drawCards(count = 5) {
+      const cards = [];
+      for (let i = 0; i < count; i++) {
+        if (state.deck.length === 0) state.deck = makeDeck();
+        cards.push(state.deck.pop());
+      }
+      return cards;
+    }
+
+    function renderJokers() {
+      const list = $("jokerList");
+      list.innerHTML = "";
+      jokerCatalog.forEach((joker) => {
+        const button = document.createElement("button");
+        button.className = "joker";
+        button.innerHTML = `
+          <div class="joker-main">
+            <div class="joker-name">${joker.name}</div>
+            <div class="joker-effect">${joker.effect}</div>
+          </div>
+          <div class="joker-buy">$${joker.cost}</div>
+        `;
+        button.addEventListener("click", () => buyJoker(joker));
+        list.appendChild(button);
+      });
+    }
+
+    function buyJoker(joker) {
+      if (state.money < joker.cost) {
+        addLog("Not enough cash for that joker.");
+        return;
+      }
+      state.money -= joker.cost;
+      state.jokers.push(joker);
+      if (joker.type === "mult") state.mult += joker.value;
+      if (joker.type === "chips") state.score += joker.value * 2;
+      if (joker.type === "score") state.score += state.score * (joker.value - 1);
+      addLog(`${joker.name} installed. ${joker.effect}.`);
+      updateStats();
+      renderJokers();
+    }
+
+    function addLog(message) {
+      state.log.unshift(message);
+      const max = 6;
+      state.log = state.log.slice(0, max);
+      const list = $("log");
+      list.innerHTML = state.log.map((entry) => `<li>${entry}</li>`).join("");
+    }
+
+    function getHandRank(cards) {
+      const values = cards.map((c) => c.value).sort((a, b) => b - a);
+      const suitsSet = new Set(cards.map((c) => c.suit));
+      const counts = {};
+      cards.forEach((card) => {
+        counts[card.rank] = (counts[card.rank] || 0) + 1;
+      });
+      const rankCounts = Object.values(counts).sort((a, b) => b - a);
+      const isFlush = suitsSet.size === 1;
+      const sortedUnique = [...new Set(values)].sort((a, b) => b - a);
+      let isStraight = false;
+      const straightCheck = [...new Set(values)].sort((a, b) => a - b);
+
+      if (straightCheck.length === 5) {
+        const min = straightCheck[0];
+        const seq = straightCheck.every((value, idx) => idx === 0 || value === straightCheck[idx - 1] + 1);
+        if (seq || (straightCheck.includes(14) && straightCheck.includes(5) && straightCheck.includes(4) && straightCheck.includes(3) && straightCheck.includes(2))) {
+          isStraight = true;
+        }
+      }
+
+      if (isFlush && (values.includes(14) && values.includes(13) && values.includes(12) && values.includes(11) && values.includes(10))) {
+        return { name: "Royal Flush", base: 200, multiplier: 1.5 };
+      }
+      if (isFlush && isStraight) {
+        return { name: "Straight Flush", base: 120, multiplier: 1.4 };
+      }
+      if (rankCounts[0] === 4) {
+        return { name: "Four of a Kind", base: 85, multiplier: 1.3 };
+      }
+      if (rankCounts[0] === 3 && rankCounts[1] === 2) {
+        return { name: "Full House", base: 65, multiplier: 1.2 };
+      }
+      if (isFlush) {
+        return { name: "Flush", base: 50, multiplier: 1.15 };
+      }
+      if (isStraight) {
+        return { name: "Straight", base: 42, multiplier: 1.1 };
+      }
+      if (rankCounts[0] === 3) {
+        return { name: "Three of a Kind", base: 28, multiplier: 1.05 };
+      }
+      if (rankCounts[0] === 2 && rankCounts[1] === 2) {
+        return { name: "Two Pair", base: 18, multiplier: 1 };
+      }
+      if (rankCounts[0] === 2) {
+        return { name: "Pair", base: 12, multiplier: 1 };
+      }
+      return { name: "High Card", base: 8, multiplier: 0.8 };
+    }
+
+    function computeHandScore(cards) {
+      const result = getHandRank(cards);
+      const handStrength = pokerRankMap[result.name];
+      const topCard = cards.map((c) => c.value).sort((a, b) => b - a)[0] || 0;
+      const handValue = result.base + topCard * 1.5 + handStrength * 10;
+      const scoringMult = state.mult + state.jokers.reduce((sum, joker) => sum + (joker.type === "mult" ? joker.value : 0), 0);
+      const total = Math.floor((handValue * result.multiplier * scoringMult) + state.score * 0.08);
+      return { ...result, total };
+    }
+
+    function updateStats() {
+      $("anteValue").textContent = String(state.ante);
+      $("moneyValue").textContent = String(state.money);
+      $("multValue").textContent = `${state.mult}x`;
+      $("scoreValue").textContent = String(state.score);
+    }
+
+    function renderHand() {
+      const handEl = $("hand");
+      handEl.innerHTML = "";
+      state.hand.forEach((card, index) => {
+        const btn = document.createElement("button");
+        btn.className = `card ${card.suit === "♥" || card.suit === "♦" ? "red" : ""} ${state.selected.has(index) ? "selected" : ""}`;
+        btn.type = "button";
+        btn.innerHTML = `
+          <div class="card-rank">${card.rank}</div>
+          <div class="card-suit">${card.suit}</div>
+          <div class="card-bottom">${card.rank}</div>
+          ${state.selected.has(index) ? '<div class="hold-mark">H</div>' : ""}
+        `;
+        btn.addEventListener("click", () => toggleCard(index));
+        handEl.appendChild(btn);
+      });
+    }
+
+    function toggleCard(index) {
+      if (state.selected.has(index)) {
+        state.selected.delete(index);
+      } else {
+        state.selected.add(index);
+      }
+      renderHand();
+    }
+
+    function replaceSelectedCards() {
+      const newHand = [...state.hand];
+      const selectedArray = Array.from(state.selected);
+      if (!selectedArray.length) {
+        addLog("No cards held. You can still play a fresh hand.");
+      }
+      selectedArray.forEach((index) => {
+        if (state.deck.length === 0) state.deck = makeDeck();
+        newHand[index] = state.deck.pop();
+      });
+      state.hand = newHand;
+      state.selected.clear();
+      renderHand();
+    }
+
+    function playHand() {
+      if (state.hand.length === 0) {
+        addLog("Your hand is empty. A new deal is ready.");
+        return;
+      }
+
+      const result = computeHandScore(state.hand);
+      state.score += result.total;
+      state.money += Math.max(1, Math.floor(result.total / 20));
+      state.ante += 1;
+      addLog(`You scored ${result.total} with ${result.name}.`);
+      state.deck = makeDeck();
+      state.hand = drawCards(5);
+      state.selected.clear();
+      renderHand();
+      updateStats();
+      if (state.money >= 8) {
+        addLog("The shop is looking healthy. Joker prices are still fair.");
+      }
+    }
+
+    function init() {
+      state.deck = makeDeck();
+      state.hand = drawCards(5);
+      updateStats();
+      renderHand();
+      renderJokers();
+      addLog("Welcome to the table. Press Play Hand to score your opening deal.");
+      addLog("Buy a joker to stack multiplier for later rounds.");
+
+      $("playBtn").addEventListener("click", playHand);
+      $("drawBtn").addEventListener("click", () => {
+        replaceSelectedCards();
+        addLog("Discard and draw complete.");
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>
